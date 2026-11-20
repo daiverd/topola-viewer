@@ -36,10 +36,46 @@ function serveSamples(): Plugin {
   };
 }
 
+const sample = '#/view?url=/samples/a11y-test.ged&handleCors=false&indi=I1';
+const startLinks: Array<[string, string]> = [
+  ['Hourglass chart, HTML tree mode', `/${sample}`],
+  ['Hourglass chart, SVG mode', `/${sample}&a11y=svg`],
+  ['Hourglass chart, HTML tree mode, no side panel', `/${sample}&sidePanel=false`],
+  ['Hourglass chart, SVG mode, no side panel', `/${sample}&a11y=svg&sidePanel=false`],
+  ['All relatives chart (no accessibility work yet)', `/${sample}&view=relatives`],
+  ['Fancy tree (no accessibility work yet)', `/${sample}&view=fancy`],
+  ['Donatso chart (no accessibility work yet)', `/${sample}&view=donatso`],
+];
+
+/** A start page at /start linking to each test configuration. */
+function startPage(): Plugin {
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Chart accessibility prototype</title></head>
+<body><main>
+<h1>Chart accessibility prototype</h1>
+<p>Test tree: Ada Kowal and family (samples/a11y-test.ged).
+Each link opens a fresh page, so switching modes needs no reload.</p>
+<ul>
+${startLinks.map(([text, href]) => `<li><a href="${href.replace(/&/g, '&amp;')}">${text}</a></li>`).join('\n')}
+</ul>
+<p>In the chart, press H for the list of keys.</p>
+</main></body></html>`;
+  return {
+    name: 'start-page',
+    configureServer(server) {
+      server.middlewares.use('/start', (_req, res) => {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.end(html);
+      });
+    },
+  };
+}
+
 export default mergeConfig(
   baseConfig,
   defineConfig({
-    plugins: [serveSamples()],
+    plugins: [serveSamples(), startPage()],
     resolve: {
       alias: [{find: /^topola$/, replacement: resolve(topolaSrc, 'index.ts')}],
       // Make sure the viewer and topola share one copy of each D3 module, so

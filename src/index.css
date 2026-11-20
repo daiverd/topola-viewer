@@ -431,3 +431,20 @@ div.zoom {
     right: 0;
   }
 }
+/* Accessibility prototype: content for screen readers only. */
+.a11y-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The chart draws its own focus ring (a11y-focus-ring). */
+#chartSvg [data-a11y-key]:focus {
+  outline: none;
+}

@@ -101,6 +101,8 @@ export class ChartWrapper {
   /** Props that will be used for rerendering. */
   private rerenderProps?: ChartProps;
   private rerenderResetPosition?: boolean;
+  /** Called after every chart render with the chart info and rendered props. */
+  onRendered?: (info: ChartInfo, props: ChartProps) => void;
 
   zoom(factor: number) {
     const parent = select('#svgContainer') as Selection<
@@ -178,6 +180,7 @@ export class ChartWrapper {
       startIndi: props.selection.id,
       baseGeneration: props.selection.generation,
     });
+    this.onRendered?.(chartInfo, props);
     const svg = select('#chartSvg');
     const parent = select('#svgContainer').node() as Element;
     const scale = zoomTransform(parent).k;

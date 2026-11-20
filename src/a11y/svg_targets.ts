@@ -93,6 +93,41 @@ export function svgItemElement(chart: Element, key: string): SVGElement | null {
  * SVG mode: puts tree semantics directly on the drawn SVG elements. Items are
  * flat in the DOM, so level, position and set size are given explicitly.
  */
+const ITEM_ATTRIBUTES = [
+  'data-a11y-key',
+  'role',
+  'tabindex',
+  'aria-label',
+  'aria-description',
+  'aria-level',
+  'aria-posinset',
+  'aria-setsize',
+  'aria-expanded',
+  'aria-hidden',
+];
+
+/** Sets or removes a marker-tracked attribute on exactly the given elements. */
+function syncMarked(
+  chart: Element,
+  marker: string,
+  attribute: string,
+  value: string,
+  wanted: Set<Element>,
+) {
+  chart.querySelectorAll(`[${marker}]`).forEach((e) => {
+    if (!wanted.has(e)) {
+      e.removeAttribute(attribute);
+      e.removeAttribute(marker);
+    }
+  });
+  wanted.forEach((e) => {
+    if (e.hasAttribute(marker)) return;
+    if (e.hasAttribute(attribute)) return; // has its own value; leave it
+    e.setAttribute(attribute, value);
+    e.setAttribute(marker, '');
+  });
+}
+
 export function decorateSvg(
   chart: Element,
   model: AccessibleModel | undefined,
@@ -100,81 +135,86 @@ export function decorateSvg(
   expanded: Set<string>,
   focusedKey: string | undefined,
 ) {
-  chart.querySelectorAll('[data-a11y-none]').forEach((e) => {
-    e.removeAttribute('role');
-    e.removeAttribute('data-a11y-none');
-  });
-  chart.querySelectorAll('[data-a11y-unlisted]').forEach((e) => {
-    e.removeAttribute('aria-hidden');
-    e.removeAttribute('data-a11y-unlisted');
-  });
-  chart.querySelectorAll('[data-a11y-key]').forEach((e) => {
-    [
-      'role',
-      'tabindex',
-      'aria-label',
-      'aria-description',
-      'aria-level',
-      'aria-posinset',
-      'aria-setsize',
-      'aria-expanded',
-      'aria-hidden',
-      'data-a11y-key',
-    ].forEach((a) => e.removeAttribute(a));
-  });
-  if (!model) {
-    chart.removeAttribute('role');
-    return;
-  }
-  chart.setAttribute('role', 'tree');
-  chart.setAttribute('aria-label', model.summary);
-  const walk = (
-    item: AccessibleItem,
-    level: number,
-    pos: number,
-    size: number,
-  ) => {
-    const element = focusTarget(chart, item);
-    if (element) {
-      element.setAttribute('data-a11y-key', item.key);
-      element.setAttribute('role', 'treeitem');
-      element.setAttribute('tabindex', item.key === focusedKey ? '0' : '-1');
-      element.setAttribute('aria-label', item.label);
-      if (item.description) {
-        element.setAttribute('aria-description', item.description);
-      }
-      element.setAttribute('aria-level', String(level));
-      element.setAttribute('aria-posinset', String(pos));
-      element.setAttribute('aria-setsize', String(size));
-      if (item.children.length) {
-        element.setAttribute('aria-expanded', String(expanded.has(item.key)));
-      }
-      if (!visibleKeys.has(item.key)) {
-        element.setAttribute('aria-hidden', 'true');
-      }
-      // Chrome only treats an SVG treeitem as part of the tree when every <g>
-      // between them is explicitly presentational; plain layout <g>s turn
-      // each treeitem into a "group".
-      for (
-        let e = element.parentElement;
-        e && e !== chart;
-        e = e.parentElement
-      ) {
-        if (!e.hasAttribute('role')) {
-          e.setAttribute('role', 'none');
-          e.setAttribute('data-a11y-none', '');
+  // Work out the wanted attributes first, then change only what differs.
+  // Removing and re-adding tabindex on the focused element makes the browser
+  // drop focus to the document (seen with NVDA on expand/collapse).
+  const wanted = new Map<Element, Record<string, string>>();
+  const presentational = new Set<Element>();
+  if (model) {
+    const walk = (
+      item: AccessibleItem,
+      level: number,
+      pos: number,
+      size: number,
+    ) => {
+      const element = focusTarget(chart, item);
+      if (element) {
+        const attrs: Record<string, string> = {
+          'data-a11y-key': item.key,
+          role: 'treeitem',
+          tabindex: item.key === focusedKey ? '0' : '-1',
+          'aria-label': item.label,
+          'aria-level': String(level),
+          'aria-posinset': String(pos),
+          'aria-setsize': String(size),
+        };
+        if (item.description) attrs['aria-description'] = item.description;
+        if (item.children.length) {
+          attrs['aria-expanded'] = String(expanded.has(item.key));
+        }
+        if (!visibleKeys.has(item.key)) attrs['aria-hidden'] = 'true';
+        wanted.set(element, attrs);
+        // Chrome only treats an SVG treeitem as part of the tree when every
+        // <g> between them is explicitly presentational; plain layout <g>s
+        // turn each treeitem into a "group".
+        for (
+          let e = element.parentElement;
+          e && e !== chart;
+          e = e.parentElement
+        ) {
+          presentational.add(e);
         }
       }
-    }
-    item.children.forEach((c, i) =>
-      walk(c, level + 1, i + 1, item.children.length),
-    );
-  };
-  walk(model.root, 1, 1, 1);
+      item.children.forEach((c, i) =>
+        walk(c, level + 1, i + 1, item.children.length),
+      );
+    };
+    walk(model.root, 1, 1, 1);
+  }
+
+  chart.querySelectorAll('[data-a11y-key]').forEach((e) => {
+    if (!wanted.has(e)) ITEM_ATTRIBUTES.forEach((a) => e.removeAttribute(a));
+  });
+  wanted.forEach((attrs, e) => {
+    ITEM_ATTRIBUTES.forEach((a) => {
+      const value = attrs[a];
+      if (value === undefined) {
+        e.removeAttribute(a);
+      } else if (e.getAttribute(a) !== value) {
+        e.setAttribute(a, value);
+      }
+    });
+  });
+  syncMarked(chart, 'data-a11y-none', 'role', 'none', presentational);
   // Boxes drawn more than once but listed once in the tree (the centre person
   // with several marriages) would otherwise show up as empty groups.
-  chart.querySelectorAll('g.indi:not([data-a11y-key])').forEach((e) => {
-    e.setAttribute('aria-hidden', 'true');
-    e.setAttribute('data-a11y-unlisted', '');
-  });
+  syncMarked(
+    chart,
+    'data-a11y-unlisted',
+    'aria-hidden',
+    'true',
+    new Set(
+      model
+        ? Array.from(chart.querySelectorAll('g.indi:not([data-a11y-key])'))
+        : [],
+    ),
+  );
+
+  if (model) {
+    chart.setAttribute('role', 'tree');
+    chart.setAttribute('aria-label', model.summary);
+  } else {
+    chart.removeAttribute('role');
+    chart.removeAttribute('aria-label');
+  }
 }

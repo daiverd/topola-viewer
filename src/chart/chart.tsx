@@ -216,6 +216,8 @@ export function Chart(props: ChartProps) {
           aria-hidden={a11yMode === 'html' && model ? true : undefined}
           {...(a11yMode === 'svg'
             ? {
+                // Otherwise NVDA says "graphic" before the tree.
+                role: 'none',
                 ...trackFocus,
                 onKeyDown: navigator.onKeyDown,
                 onFocusCapture: navigator.onFocusIn,

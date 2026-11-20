@@ -47,7 +47,7 @@ function dataDetails(entry: GedcomEntry) {
   }
   return (
     <>
-      <Header sub>
+      <Header sub role="heading" aria-level={3}>
         <TranslatedTag tag={entry.tag} />
       </Header>
       <span>
@@ -72,7 +72,7 @@ function attributeDetails(entry: GedcomEntry) {
   if (attributeName) {
     return (
       <>
-        <Header sub>
+        <Header sub role="heading" aria-level={3}>
           <TranslatedTag tag={entry.tag} />
         </Header>
         <div>
@@ -83,7 +83,7 @@ function attributeDetails(entry: GedcomEntry) {
   } else {
     return (
       <>
-        <Header sub>
+        <Header sub role="heading" aria-level={3}>
           <TranslatedTag tag={entry.tag} />
         </Header>
         <div>{attributeValue}</div>
@@ -134,7 +134,7 @@ function sourceDetails(
   return (
     <>
       <div className="item-header">
-        <Header as="span" size="small">
+        <Header as="span" size="small" role="heading" aria-level={3}>
           <TranslatedTag tag="SOUR" />
         </Header>
       </div>
@@ -171,7 +171,7 @@ function fileDetails(
   return (
     <>
       <div className="item-header">
-        <Header as="span" size="small">
+        <Header as="span" size="small" role="heading" aria-level={3}>
           <TranslatedTag tag="OBJE" />
         </Header>
       </div>
@@ -235,7 +235,7 @@ function nameDetails(entry: GedcomEntry) {
 
   return (
     <>
-      <Header as="span" size="large">
+      <Header as="span" size="large" role="heading" aria-level={2}>
         {fullName ? (
           fullName
         ) : (
@@ -332,7 +332,7 @@ function getSectionForId(indi: string): React.ReactNode {
   return (
     <Item>
       <Item.Content>
-        <Header sub>
+        <Header sub role="heading" aria-level={3}>
           <FormattedMessage id="config.ids" defaultMessage="Identification" />
         </Header>
         <div>

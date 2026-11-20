@@ -109,7 +109,7 @@ function EventHeader(props: {event: EventData}) {
   const intl = useIntl();
   return (
     <div className="item-header">
-      <Header as="span" size="small">
+      <Header as="span" size="small" role="heading" aria-level={3}>
         <TranslatedTag tag={getEventTitle(props.event)} />
       </Header>
       {props.event.date ? (

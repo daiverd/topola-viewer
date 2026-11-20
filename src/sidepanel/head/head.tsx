@@ -68,7 +68,7 @@ export function SourceHead(gedcom: GedcomData) {
   return (
     <Item>
       <Item.Content>
-        <Header sub>
+        <Header sub role="heading" aria-level={3}>
           <FormattedMessage id="head.source" defaultMessage="Data source" />
         </Header>
         <List>

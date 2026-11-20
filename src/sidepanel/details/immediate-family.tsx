@@ -116,7 +116,7 @@ export function ImmediateFamily(props: Props) {
     <Item>
       <Item.Content>
         <div className="item-header">
-          <Header as="span" size="small">
+          <Header as="span" size="small" role="heading" aria-level={3}>
             <FormattedMessage
               id="family.immediate_family"
               defaultMessage="Immediate Family"

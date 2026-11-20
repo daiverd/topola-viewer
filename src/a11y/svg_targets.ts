@@ -100,6 +100,14 @@ export function decorateSvg(
   expanded: Set<string>,
   focusedKey: string | undefined,
 ) {
+  chart.querySelectorAll('[data-a11y-none]').forEach((e) => {
+    e.removeAttribute('role');
+    e.removeAttribute('data-a11y-none');
+  });
+  chart.querySelectorAll('[data-a11y-unlisted]').forEach((e) => {
+    e.removeAttribute('aria-hidden');
+    e.removeAttribute('data-a11y-unlisted');
+  });
   chart.querySelectorAll('[data-a11y-key]').forEach((e) => {
     [
       'role',
@@ -144,10 +152,29 @@ export function decorateSvg(
       if (!visibleKeys.has(item.key)) {
         element.setAttribute('aria-hidden', 'true');
       }
+      // Chrome only treats an SVG treeitem as part of the tree when every <g>
+      // between them is explicitly presentational; plain layout <g>s turn
+      // each treeitem into a "group".
+      for (
+        let e = element.parentElement;
+        e && e !== chart;
+        e = e.parentElement
+      ) {
+        if (!e.hasAttribute('role')) {
+          e.setAttribute('role', 'none');
+          e.setAttribute('data-a11y-none', '');
+        }
+      }
     }
     item.children.forEach((c, i) =>
       walk(c, level + 1, i + 1, item.children.length),
     );
   };
   walk(model.root, 1, 1, 1);
+  // Boxes drawn more than once but listed once in the tree (the centre person
+  // with several marriages) would otherwise show up as empty groups.
+  chart.querySelectorAll('g.indi:not([data-a11y-key])').forEach((e) => {
+    e.setAttribute('aria-hidden', 'true');
+    e.setAttribute('data-a11y-unlisted', '');
+  });
 }

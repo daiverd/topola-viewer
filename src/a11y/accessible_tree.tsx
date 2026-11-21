@@ -1,6 +1,6 @@
 import {useEffect, useRef} from 'react';
 import {AccessibleItem} from 'topola';
-import {ChartNavigator} from './use_chart_navigator';
+import {ChartNavigator, TREE_HINT} from './use_chart_navigator';
 
 /** DOM id for an item's treeitem element. */
 export function htmlItemId(key: string) {
@@ -70,6 +70,7 @@ export function AccessibleTree({navigator}: {navigator: ChartNavigator}) {
       ref={treeRef}
       role="tree"
       aria-label={model.summary}
+      aria-description={TREE_HINT}
       className="a11y-visually-hidden"
       onKeyDown={navigator.onKeyDown}
       onFocus={navigator.onFocusIn}

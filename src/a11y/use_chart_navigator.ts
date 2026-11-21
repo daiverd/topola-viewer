@@ -38,6 +38,10 @@ export interface ChartNavigator {
   scrollRequest: number;
 }
 
+/** Read once when entering the tree, so the actions are discoverable. */
+export const TREE_HINT =
+  'Enter: centre the chart on a person. Space: show their details. H: all keys.';
+
 export const HELP_TEXT =
   'Family chart keys. ' +
   'Up and down arrows: previous and next person. ' +

@@ -1,4 +1,5 @@
 import {AccessibleItem, AccessibleModel} from 'topola';
+import {TREE_HINT} from './use_chart_navigator';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const RING_CLASS = 'a11y-focus-ring';
@@ -210,11 +211,21 @@ export function decorateSvg(
     ),
   );
 
+  // The drawn text inside each item ("Jan", "Kowal", "*") would otherwise be
+  // read piece by piece in browse mode instead of the item's name.
+  const drawnContent = new Set<Element>();
+  wanted.forEach((_attrs, e) =>
+    Array.from(e.children).forEach((c) => drawnContent.add(c)),
+  );
+  syncMarked(chart, 'data-a11y-content', 'aria-hidden', 'true', drawnContent);
+
   if (model) {
     chart.setAttribute('role', 'tree');
     chart.setAttribute('aria-label', model.summary);
+    chart.setAttribute('aria-description', TREE_HINT);
   } else {
     chart.removeAttribute('role');
     chart.removeAttribute('aria-label');
+    chart.removeAttribute('aria-description');
   }
 }

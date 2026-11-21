@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {FormattedMessage} from 'react-intl';
+import {useIntl} from 'react-intl';
 import {
   Icon,
   Item,
@@ -7,6 +7,7 @@ import {
   Menu,
   MenuItemProps,
   Popup,
+  SemanticICONS,
   Tab,
 } from 'semantic-ui-react';
 import {Source} from '../../util/gedcom_util';
@@ -79,84 +80,84 @@ export function EventExtras(props: Props) {
       : setActiveIndex(-1);
   }
 
-  const imageTab = props.images?.length && {
-    menuItem: (
-      <Menu.Item fitted key="images" onClick={handleTabOnClick}>
-        <Popup
-          content={
-            <FormattedMessage id="extras.images" defaultMessage="Images" />
-          }
-          size="mini"
-          position="bottom center"
-          trigger={<Icon circular name="camera" />}
-        />
-      </Menu.Item>
-    ),
-    render: () => <Tab.Pane>{eventImages(props.images)}</Tab.Pane>,
-  };
+  const intl = useIntl();
+  const extras: Array<{
+    key: string;
+    label: string;
+    icon: SemanticICONS;
+    render: () => React.ReactNode;
+  } | false> = [
+    !!props.images?.length && {
+      key: 'images',
+      label: intl.formatMessage({id: 'extras.images', defaultMessage: 'Images'}),
+      icon: 'camera',
+      render: () => <Tab.Pane>{eventImages(props.images)}</Tab.Pane>,
+    },
+    !!props.notes?.length && {
+      key: 'notes',
+      label: intl.formatMessage({id: 'extras.notes', defaultMessage: 'Notes'}),
+      icon: 'sticky note outline',
+      render: () => <Tab.Pane>{eventNotes(props.notes)}</Tab.Pane>,
+    },
+    !!props.sources?.length && {
+      key: 'sources',
+      label: intl.formatMessage({
+        id: 'extras.sources',
+        defaultMessage: 'Sources',
+      }),
+      icon: 'quote right',
+      render: () => (
+        <Tab.Pane>
+          <Sources sources={props.sources} />
+        </Tab.Pane>
+      ),
+    },
+    !!props.files?.length && {
+      key: 'files',
+      label: intl.formatMessage({
+        id: 'extras.files',
+        defaultMessage: 'Additional files',
+      }),
+      icon: 'file alternate outline',
+      render: () => (
+        <Tab.Pane>
+          <AdditionalFiles files={props.files} />
+        </Tab.Pane>
+      ),
+    },
+  ];
 
-  const noteTab = props.notes?.length && {
-    menuItem: (
-      <Menu.Item fitted key="notes" onClick={handleTabOnClick}>
-        <Popup
-          content={
-            <FormattedMessage id="extras.notes" defaultMessage="Notes" />
-          }
-          size="mini"
-          position="bottom center"
-          trigger={<Icon circular name="sticky note outline" />}
-        />
-      </Menu.Item>
-    ),
-    render: () => <Tab.Pane>{eventNotes(props.notes)}</Tab.Pane>,
-  };
-
-  const sourceTab = props.sources?.length && {
-    menuItem: (
-      <Menu.Item fitted key="sources" onClick={handleTabOnClick}>
-        <Popup
-          content={
-            <FormattedMessage id="extras.sources" defaultMessage="Sources" />
-          }
-          size="mini"
-          position="bottom center"
-          trigger={<Icon circular name="quote right" />}
-        />
-      </Menu.Item>
-    ),
-    render: () => (
-      <Tab.Pane>
-        <Sources sources={props.sources} />
-      </Tab.Pane>
-    ),
-  };
-
-  const filesTab = props.files?.length && {
-    menuItem: (
-      <Menu.Item fitted key="files" onClick={handleTabOnClick}>
-        <Popup
-          content={
-            <FormattedMessage
-              id="extras.files"
-              defaultMessage="Additional files"
-            />
-          }
-          size="mini"
-          position="bottom center"
-          trigger={<Icon circular name="file alternate outline" />}
-        />
-      </Menu.Item>
-    ),
-    render: () => (
-      <Tab.Pane>
-        <AdditionalFiles files={props.files} />
-      </Tab.Pane>
-    ),
-  };
-
-  const panes = [imageTab, noteTab, sourceTab, filesTab].flatMap((tab) =>
-    tab ? [tab] : [],
-  );
+  // Each icon is a toggle button: it was an <a> without href, so it had no
+  // name and could not be reached or operated with the keyboard.
+  const panes = extras
+    .flatMap((extra) => (extra ? [extra] : []))
+    .map((extra, index) => ({
+      menuItem: (
+        <Menu.Item
+          fitted
+          key={extra.key}
+          role="button"
+          tabIndex={0}
+          aria-label={extra.label}
+          aria-expanded={activeIndex === index}
+          onClick={handleTabOnClick}
+          onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+        >
+          <Popup
+            content={extra.label}
+            size="mini"
+            position="bottom center"
+            trigger={<Icon circular name={extra.icon} />}
+          />
+        </Menu.Item>
+      ),
+      render: extra.render,
+    }));
 
   if (panes.length) {
     return (
